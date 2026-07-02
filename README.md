@@ -14,6 +14,11 @@ One mirror of the family — same DNA, different domain:
 | 🔎 **provenance-mirror** (you are here) | Content authenticity | **Is the origin proven?** |
 | 👁 [mirror-witness](https://github.com/bhyi4/mirror-witness) | Cross-operator witness board | Who else **witnessed** it? |
 
+> **Ledger format**: the sealed verdict/distribution ledger conforms to
+> **[MIRROR-SPEC v1.0](https://github.com/bhyi4/measure-mirror/blob/main/docs/SPEC.md)**
+> (the family's normative format, ratified 2026-07-02) — this package is a
+> reference implementation.
+
 The four together = the 🪞🔎🪪 [Mirror Stack](https://github.com/bhyi4/measure-mirror/tree/main/stack).
 
 💬 **[Discussions](https://github.com/orgs/mirror-stack/discussions)** — questions · ideas · independent reproductions welcome.
