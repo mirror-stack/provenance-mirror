@@ -17,7 +17,9 @@ One mirror of the family — same DNA, different domain:
 > **Ledger format**: the sealed verdict/distribution ledger conforms to
 > **[MIRROR-SPEC v1.0](https://github.com/bhyi4/measure-mirror/blob/main/docs/SPEC.md)**
 > (the family's normative format, ratified 2026-07-02) — this package is a
-> reference implementation.
+> reference implementation. Note: `pm` writes the genesis marker as `"GENESIS"`;
+> the spec compares it case-insensitively (§5.1), so both `"GENESIS"` and
+> `"genesis"` are valid.
 
 The four together = the 🪞🔎🪪 [Mirror Stack](https://github.com/bhyi4/measure-mirror/tree/main/stack).
 
