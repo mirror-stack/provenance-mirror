@@ -151,7 +151,7 @@ def test_verify_seals_ledger_chain(tmp_path):
     f = _write(tmp_path, "x.jpg", JPEG_OK)
     res = pm.verify(f, ledger_path=ledger)
     assert "ledger_entry" in res
-    assert len(res["ledger_entry"]["seal"]) == 16
+    assert len(res["ledger_entry"]["seal"]) == 64   # full digest since seal upgrade
     assert res["ledger_entry"]["prev_seal"] == "GENESIS"
 
 

@@ -249,11 +249,27 @@ def _origins_for_hash(ledger_path: str, file_hash: str) -> list[str | None]:
             if e.get("file_hash") == file_hash]
 
 
+_LEGACY_SEAL_LEN = 16   # pre-v0.2 truncated seals — see _seal_matches
+
+
+def _seal_matches(stored: str, full_hex: str) -> bool:
+    """Match a stored seal against the full SHA-256 hex digest.
+
+    New entries seal with the FULL 64-hex digest: 16-hex (64-bit) truncation
+    lets a dishonest sealer birthday-search (~2^32) two entries sharing one
+    seal. Legacy 16-hex seals stay verifiable via prefix match (their original,
+    weaker strength is unchanged)."""
+    stored = str(stored)
+    if stored == full_hex:
+        return True
+    return len(stored) == _LEGACY_SEAL_LEN and stored == full_hex[:_LEGACY_SEAL_LEN]
+
+
 def _seal(ledger_path: str, entry: dict) -> dict:
     entry["prev_seal"] = _get_last_seal(ledger_path)
     entry["seal"] = hashlib.sha256(
         json.dumps(entry, sort_keys=True, ensure_ascii=False).encode()
-    ).hexdigest()[:16]
+    ).hexdigest()
     with open(ledger_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     return entry

@@ -40,7 +40,7 @@ def test_distribute_seals_record(tmp_path):
     ledger = str(tmp_path / "l.jsonl")
     out = tr.distribute(DOC, recipient="jebi", doc_id="q3-report", ledger_path=ledger)
     assert out["recipient"] == "jebi"
-    assert len(out["ledger_entry"]["seal"]) == 16
+    assert len(out["ledger_entry"]["seal"]) == 64   # full digest since seal upgrade
     assert out["marked_hash"] != out["clean_hash"]
 
 
