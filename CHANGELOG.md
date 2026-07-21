@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.0] — 2026-07-21
+
+### Security
+- **Ledger seal width: 16-hex (64-bit) truncation → full 64-hex SHA-256** —
+  closes the dishonest-sealer birthday-collision gap (~2^32): a sealer could
+  search two entries sharing one truncated seal and swap them after sealing.
+  New entries seal with the full digest; legacy 16-hex seals keep verifying
+  via prefix match (`_seal_matches`). No ledger migration needed. Stack-
+  consistency follow-up to the same fix in measure-mirror (0.27.0) and
+  action-mirror (0.2.0). (`tracing.py` watermark hashes are a clean/marked
+  comparison, not an adversarial commitment — left as-is by design.)
+
 ## [0.1.0] — 2026-06-12
 
 First proof-of-concept. The **frame** is real and tested; the heavy crypto/ML
