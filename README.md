@@ -90,6 +90,33 @@ That last row is the whole point: an unsigned real photo is `UNVERIFIED`, never
 
 ---
 
+## Verdict synthesis — `synthesize(signals)`
+
+The five signals above are collapsed into one verdict by `synthesize()`, and
+**the order of its checks IS the honesty policy** — it is not an implementation
+detail. It was in `__all__` (a public API promise) with no documentation, which
+meant the one function encoding the policy was the one you had to read source
+to find.
+
+| Priority | Verdict | Fires when | Why this order |
+|---|---|---|---|
+| 1 | `TAMPERED` | any signal points to TAMPERED | A broken integrity signal outranks everything: if the bytes were altered, nothing else read from them can be trusted. |
+| 2 | `CONFLICTING` | AUTHENTIC **and** SYNTHETIC both present | Disagreement is reported as disagreement. Silently picking a winner would manufacture a certainty that the evidence does not support. |
+| 3 | `SYNTHETIC` | any SYNTHETIC signal | An AI-origin assertion is positive evidence. |
+| 4 | `AUTHENTIC-SIGNED` | any AUTHENTIC signal | A provenance signature is present. ⚠️ PoC: the crypto chain is **not** yet verified. |
+| 5 | `UNVERIFIED` | no usable signal | **The honest default.** No signal means *unknown* — it is **NOT** evidence of fakery. |
+
+Row 5 is the point of the package. A provenance tool that returns "fake" when
+it simply cannot tell is worse than no tool, because the absence of a signal is
+overwhelmingly common: most authentic media carries no C2PA manifest either.
+
+```python
+from provmirror import verify, synthesize
+
+signals = verify("photo.jpg")
+print(synthesize(signals))     # e.g. "UNVERIFIED"
+```
+
 ## Usage
 
 ```bash
