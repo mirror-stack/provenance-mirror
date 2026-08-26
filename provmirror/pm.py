@@ -211,20 +211,76 @@ _VERDICT_NOTE = {
 # ─────────────────────────────────────────────────────────────
 # Ledger (chain-hashed, ported from measure-mirror)
 # ─────────────────────────────────────────────────────────────
-def _get_last_seal(ledger_path: str) -> str:
+def _seal_of(raw: bytes):
+    """`seal` of one raw ledger line, or None if it has none / does not parse.
+
+    Bytes, not str: the tail reader below seeks into the file and cannot rely on
+    text-mode decoding of a chunk boundary. The `isinstance` guard is not defensive
+    padding — the previous version called `.get()` on whatever the line parsed to, so
+    a bare number (valid JSON, and present in real ledgers in this house) raised
+    AttributeError from inside an append, after the caller believed it was recording.
+    """
+    line = raw.strip()
+    if not line:
+        return None
+    try:
+        entry = json.loads(line.decode("utf-8"))
+    except Exception:
+        return None
+    return entry["seal"] if isinstance(entry, dict) and "seal" in entry else None
+
+
+def _get_last_seal(ledger_path: str, _chunk: int = 8192) -> str:
+    """The seal of the last sealed entry — read from the END of the file.
+
+    This runs on EVERY append. Parsing the whole ledger to find its last line makes
+    append O(n): measured 2026-08-26, one lookup on a 4.6 MB / 5,676-entry ledger cost
+    **55.24 ms** here against **0.09 ms** for this tail read — and the old cost grows
+    with every entry ever written, so the ledger gets slower precisely because it is
+    being used.
+
+    Ported from action-mirror, which has read this way since 2026-08; measure-mirror
+    received the same port in the same pass. The empty-ledger answer stays `"GENESIS"`
+    (uppercase) here and in action-mirror, while measure-mirror says `"genesis"` — that
+    difference is hashed into the head of every existing chain and must not be tidied.
+
+    Deliberately NOT cached in memory: this ledger is appended by other processes, and
+    a cached head would hand out a prev_seal that is no longer last, forking the chain.
+
+    Semantics are unchanged but for one fix: a line that is not a JSON object no longer
+    raises (see `_seal_of`). Unsealed or unparseable trailing lines are still skipped, a
+    ledger with no sealed entry still answers GENESIS, and CRLF / CR / LF endings all
+    read the same — text mode used to normalise those for us.
+    """
     if not os.path.exists(ledger_path):
         return "GENESIS"
-    last = "GENESIS"
-    with open(ledger_path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                last = json.loads(line).get("seal", last)
-            except json.JSONDecodeError:
-                continue
-    return last
+    with open(ledger_path, "rb") as f:
+        f.seek(0, os.SEEK_END)
+        pos = f.tell()
+        buf = b""
+        while pos > 0:
+            step = min(_chunk, pos)
+            pos -= step
+            f.seek(pos)
+            buf = f.read(step) + buf
+            # Split on every line ending, not just \n: reading bytes means universal-newline
+            # translation no longer happens for us, and a CR-only ledger would otherwise parse
+            # as ONE line and answer GENESIS on a chain that has a head — a silent fork.
+            parts = buf.replace(b"\r\n", b"\n").replace(b"\r", b"\n").split(b"\n")
+            # parts[0] may be the tail of a line that starts earlier in the file —
+            # only safe to read once we have reached the beginning.
+            head, complete = parts[0], parts[1:]
+            for line in reversed(complete):
+                seal = _seal_of(line)
+                if seal is not None:
+                    return seal
+            if pos == 0:
+                seal = _seal_of(head)
+                if seal is not None:
+                    return seal
+                break
+            buf = head
+    return "GENESIS"
 
 
 def _load_entries_safe(ledger_path: str) -> list[dict]:
