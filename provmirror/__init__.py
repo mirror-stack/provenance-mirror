@@ -12,4 +12,4 @@ __all__ = [
     "tamper_anchor_check", "format_integrity_check",
     "Signal", "AUTHENTIC", "SYNTHETIC", "TAMPERED", "NONE",
 ]
-__version__ = "0.2.0"
+__version__ = "0.3.0"
