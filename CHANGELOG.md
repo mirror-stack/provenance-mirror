@@ -5,6 +5,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.0] — 2026-08-28
+
+### Fixed
+- **`_get_last_seal` no longer parses the whole ledger on every append.** It read the file
+  forward from the start to find the last line, making each append O(n): measured
+  2026-08-26 on a 4.6 MB / 5,676-entry ledger, **55.24 ms** per lookup against **0.079 ms**
+  reading from the end — and the old cost grew with every entry ever written, so the ledger
+  got slower precisely because it was being used. Ported from action-mirror. Answers are
+  unchanged on all 94 ledgers checked, including CRLF/CR/LF endings, unsealed or
+  unparseable trailing lines, and a ledger with no sealed entry at all. The empty-ledger
+  answer stays `GENESIS` — it is hashed into the head of every existing chain.
+- **An append no longer dies partway on a line that is not a JSON object.** The previous
+  reader called `.get()` on whatever the line parsed to, so a bare number — which real
+  ledgers contain — raised `AttributeError` *from inside the append*, after the caller
+  believed the record was being written. Such lines are now skipped like any other
+  unsealed line.
+- **A line whose `seal` is `null` is no longer handed out as the chain head.** A census of
+  92 ledgers found zero such lines, so nothing in flight depended on the old answer — but
+  the old reader could write a `null` `prev_seal` into a live chain.
+
+### Added
+- **CI** (`#4`) — 3.10–3.12 test matrix plus a package job that installs only the built
+  wheel and import-smokes it. Until then this mirror shipped on every push with no
+  automated verification.
+- **`synthesize` is documented** (`#5`) — the verdict priority *is* the honesty policy, so
+  it belongs in the docs rather than only in the code.
+
+### Note on this entry
+`#4` and `#5` landed before `#6` and were never written up here; they are recorded now
+from their commits rather than left out, because a changelog that skips what shipped is
+the same defect this project exists to name.
+
+---
+
 ## [0.2.0] — 2026-07-21
 
 ### Security
