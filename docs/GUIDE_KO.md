@@ -58,7 +58,7 @@ verify(파일)                          trace(유출본)
 ```python
 from provmirror import pm
 pm.c2pa_manifest_check(img_bytes)
-# AUTHENTIC  — 매니페스트 존재 (서명체인 암호검증은 아직 안 함)
+# PROVENANCE_HINT — 바이트 표식만 발견; 매니페스트·서명 미검증
 # SYNTHETIC  — 매니페스트 존재 + AI origin 선언 (trainedAlgorithmicMedia)
 # NONE       — 매니페스트 없음
 ```
@@ -123,7 +123,7 @@ pm.format_integrity_check(clean_png)        # NONE — 구조 무결
 | 1 | `TAMPERED` | 어느 신호든 TAMPERED |
 | 2 | `CONFLICTING` | AUTHENTIC과 SYNTHETIC 둘 다 |
 | 3 | `SYNTHETIC` | AI-origin 신호 존재 |
-| 4 | `AUTHENTIC-SIGNED` | 출처 서명 존재, 모순 없음 |
+| 4 | `PROVENANCE-UNVERIFIED` | 출처 표식만 발견; 매니페스트·서명 미검증 |
 | 5 | `UNVERIFIED` | 아무것도 없음 — 정직한 기본값 |
 
 ```python
@@ -219,7 +219,7 @@ pm.verify("press_photo.jpg", origin="our-newsroom", ledger_path=LEDGER)
 
 | # | 신호 | 방향 | 발화 경로 |
 |---|---|---|---|
-| ① | `c2pa_manifest_check` | AUTHENTIC / SYNTHETIC | `verify` |
+| ① | `c2pa_manifest_check` | PROVENANCE_HINT / SYNTHETIC | `verify` |
 | ② | `generator_meta_check` | SYNTHETIC | `verify` |
 | ③ | `ai_watermark_check` | SYNTHETIC | `verify` |
 | ④ | `tamper_anchor_check` | TAMPERED | `verify(origin=...)` |
@@ -227,7 +227,7 @@ pm.verify("press_photo.jpg", origin="our-newsroom", ledger_path=LEDGER)
 | — | `distribute` / `trace` | — | 유출 추적 |
 | — | `badge` | — | 판정 배지 (markdown/svg) |
 
-**판정 심각도**: `TAMPERED` > `SYNTHETIC` > `CONFLICTING` > `AUTHENTIC-SIGNED` >
+**판정 심각도**: `TAMPERED` > `SYNTHETIC` > `CONFLICTING` > `PROVENANCE-UNVERIFIED` >
 `UNVERIFIED`.
 
 ---

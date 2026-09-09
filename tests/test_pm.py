@@ -115,7 +115,7 @@ def test_synthesize_synthetic():
 
 def test_synthesize_authentic():
     sigs = [pm.Signal("a", pm.AUTHENTIC, ""), pm.Signal("n", pm.NONE, "")]
-    assert pm.synthesize(sigs) == "AUTHENTIC-SIGNED"
+    assert pm.synthesize(sigs) == "PROVENANCE-UNVERIFIED"
 
 
 def test_synthesize_unverified_is_default():
@@ -143,7 +143,7 @@ def test_verify_ai_image_synthetic(tmp_path):
 def test_verify_signed_authentic(tmp_path):
     f = _write(tmp_path, "signed.jpg", jpeg_with(b"Content Credentials jumbf"))
     res = pm.verify(f, ledger_path=str(tmp_path / "l.jsonl"))
-    assert res["verdict"] == "AUTHENTIC-SIGNED"
+    assert res["verdict"] == "PROVENANCE-UNVERIFIED"
 
 
 def test_verify_seals_ledger_chain(tmp_path):

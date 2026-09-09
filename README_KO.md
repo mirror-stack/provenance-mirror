@@ -41,7 +41,7 @@
 
 | 판정 | 의미 |
 |---|---|
-| 🟢 `AUTHENTIC-SIGNED` | 출처 매니페스트 존재 (C2PA / Content Credentials) |
+| 🟡 `PROVENANCE-UNVERIFIED` | 출처 관련 표식 발견 — 매니페스트·서명 미검증 |
 | 🟠 `SYNTHETIC` | AI-origin 신호 존재 (생성기 메타데이터 또는 선언된 assertion) |
 | 🔴 `TAMPERED` | 무결성 파손, 또는 같은 바이트가 다른 출처로 재봉인됨 |
 | 🟡 `CONFLICTING` | 진위·합성 신호가 충돌 — 조사 필요 |
@@ -66,7 +66,7 @@
 
 | # | 신호 | 가리키는 곳 | 무엇을 읽나 |
 |---|---|---|---|
-| ① | `c2pa_manifest` | AUTHENTIC / SYNTHETIC | C2PA / Content Credentials 매니페스트 (AI-assertion이면 SYNTHETIC) |
+| ① | `c2pa_manifest` | PROVENANCE_HINT / SYNTHETIC | C2PA / Content Credentials 매니페스트 (AI-assertion이면 SYNTHETIC) |
 | ② | `generator_meta` | SYNTHETIC | 메타데이터의 알려진 AI-생성기 시그니처 (Midjourney, SD, DALL·E…) |
 | ③ | `ai_watermark` | SYNTHETIC | 선언된 AI 워터마크 / 훈련-미디어 assertion |
 | ④ | `tamper_anchor` | TAMPERED | 같은 바이트가 *다른* 출처로 이전 봉인됨 (재귀속) |
@@ -85,7 +85,7 @@
 | 1 | `TAMPERED` | TAMPERED 신호 존재 | 무결성이 깨졌으면 모든 것에 우선한다. 바이트가 변조됐다면 거기서 읽은 다른 값은 믿을 수 없다. |
 | 2 | `CONFLICTING` | AUTHENTIC **과** SYNTHETIC 동시 존재 | 불일치는 불일치로 보고한다. 조용히 한쪽을 고르면 증거가 뒷받침하지 않는 확신을 만들어낸다. |
 | 3 | `SYNTHETIC` | SYNTHETIC 신호 존재 | AI 생성 주장은 적극적 증거다. |
-| 4 | `AUTHENTIC-SIGNED` | AUTHENTIC 신호 존재 | 출처 서명이 있다. ⚠️ PoC: 암호 체인은 **아직 검증하지 않는다**. |
+| 4 | `PROVENANCE-UNVERIFIED` | PROVENANCE_HINT 신호 존재 (`AUTHENTIC`은 호환 별칭) | 바이트 표식만 발견했다. 유효한 매니페스트와 서명은 **미검증**이다. |
 | 5 | `UNVERIFIED` | 쓸 만한 신호 없음 | **정직한 기본값.** 신호가 없다는 건 *모른다*는 뜻이지 **가짜라는 증거가 아니다**. |
 
 5행이 이 패키지의 존재 이유입니다. 판별할 수 없을 때 "가짜"라고 답하는 출처 도구는

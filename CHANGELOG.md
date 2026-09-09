@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1] — 2026-09-09
+
+- Replace the misleading `AUTHENTIC-SIGNED` verdict with yellow
+  `PROVENANCE-UNVERIFIED`: a byte marker is not a parsed manifest or verified signature.
+- Emit `PROVENANCE_HINT` signals and explicit verification scope. `AUTHENTIC` remains
+  an import alias for compatibility. Historical sealed records are not rewritten.
+- Consumers matching verdict strings must migrate; no new result certifies authenticity.
+
 All notable changes to Provenance Mirror are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
