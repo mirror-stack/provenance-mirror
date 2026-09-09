@@ -45,7 +45,7 @@ refuse to give: **"I don't know."**
 
 | Verdict | Meaning |
 |---|---|
-| 🟢 `AUTHENTIC-SIGNED` | A provenance manifest is present (C2PA / Content Credentials) |
+| 🟡 `PROVENANCE-UNVERIFIED` | Possible provenance marker; manifest and signature NOT verified |
 | 🟠 `SYNTHETIC` | An AI-origin signal is present (generator metadata or declared assertion) |
 | 🔴 `TAMPERED` | Integrity broken, or identical bytes re-sealed under a different origin |
 | 🟡 `CONFLICTING` | Authentic and synthetic signals disagree — investigate |
@@ -82,7 +82,7 @@ That last row is the whole point: an unsigned real photo is `UNVERIFIED`, never
 
 | # | Signal | Points to | What it reads |
 |---|---|---|---|
-| ① | `c2pa_manifest` | AUTHENTIC / SYNTHETIC | C2PA / Content Credentials manifest (AI-assertion flips it) |
+| ① | `c2pa_manifest` | PROVENANCE_HINT / SYNTHETIC | C2PA / Content Credentials manifest (AI-assertion flips it) |
 | ② | `generator_meta` | SYNTHETIC | Known AI-generator fingerprint in metadata (Midjourney, SD, DALL·E…) |
 | ③ | `ai_watermark` | SYNTHETIC | Declared AI watermark / training-media assertion |
 | ④ | `tamper_anchor` | TAMPERED | Same bytes previously sealed under a *different* origin (re-attribution) |
@@ -103,7 +103,7 @@ to find.
 | 1 | `TAMPERED` | any signal points to TAMPERED | A broken integrity signal outranks everything: if the bytes were altered, nothing else read from them can be trusted. |
 | 2 | `CONFLICTING` | AUTHENTIC **and** SYNTHETIC both present | Disagreement is reported as disagreement. Silently picking a winner would manufacture a certainty that the evidence does not support. |
 | 3 | `SYNTHETIC` | any SYNTHETIC signal | An AI-origin assertion is positive evidence. |
-| 4 | `AUTHENTIC-SIGNED` | any AUTHENTIC signal | A provenance signature is present. ⚠️ PoC: the crypto chain is **not** yet verified. |
+| 4 | `PROVENANCE-UNVERIFIED` | any PROVENANCE_HINT signal (`AUTHENTIC` import alias) | Byte marker only; neither a valid manifest nor a signature has been verified. |
 | 5 | `UNVERIFIED` | no usable signal | **The honest default.** No signal means *unknown* — it is **NOT** evidence of fakery. |
 
 Row 5 is the point of the package. A provenance tool that returns "fake" when

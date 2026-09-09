@@ -59,7 +59,7 @@ proves nothing — absence of a signal is never evidence of fakery.
 ```python
 from provmirror import pm
 pm.c2pa_manifest_check(img_bytes)
-# AUTHENTIC  — manifest present (signature chain NOT yet crypto-verified)
+# PROVENANCE_HINT — byte marker only; manifest and signature NOT verified
 # SYNTHETIC  — manifest present AND declares AI origin (trainedAlgorithmicMedia)
 # NONE       — no manifest found
 ```
@@ -130,7 +130,7 @@ encodes the honesty policy:
 | 1 | `TAMPERED` | any signal points TAMPERED |
 | 2 | `CONFLICTING` | AUTHENTIC and SYNTHETIC both present |
 | 3 | `SYNTHETIC` | an AI-origin signal present |
-| 4 | `AUTHENTIC-SIGNED` | a provenance signature present, nothing contradicts |
+| 4 | `PROVENANCE-UNVERIFIED` | marker only; manifest and signature NOT verified |
 | 5 | `UNVERIFIED` | nothing — the honest default |
 
 ```python
@@ -234,7 +234,7 @@ pm.verify("press_photo.jpg", origin="our-newsroom", ledger_path=LEDGER)
 
 | # | Signal | Direction | Fires via |
 |---|---|---|---|
-| ① | `c2pa_manifest_check` | AUTHENTIC / SYNTHETIC | `verify` |
+| ① | `c2pa_manifest_check` | PROVENANCE_HINT / SYNTHETIC | `verify` |
 | ② | `generator_meta_check` | SYNTHETIC | `verify` |
 | ③ | `ai_watermark_check` | SYNTHETIC | `verify` |
 | ④ | `tamper_anchor_check` | TAMPERED | `verify(origin=...)` |
@@ -243,7 +243,7 @@ pm.verify("press_photo.jpg", origin="our-newsroom", ledger_path=LEDGER)
 | — | `badge` | — | verdict badge (markdown/svg) |
 
 **Verdict severity**: `TAMPERED` > `SYNTHETIC` > `CONFLICTING` >
-`AUTHENTIC-SIGNED` > `UNVERIFIED`.
+`PROVENANCE-UNVERIFIED` > `UNVERIFIED`.
 
 ---
 

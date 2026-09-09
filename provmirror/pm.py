@@ -18,7 +18,7 @@ Zero dependencies (stdlib only). Deterministic: same bytes → same verdict.
 Heavy signals (full C2PA crypto verification, ML classifiers) are explicitly
 marked as NOT-IMPLEMENTED stubs — this PoC proves the *frame*, not the crypto.
 
-Signals (each returns a Signal pointing AUTHENTIC / SYNTHETIC / TAMPERED / NONE):
+Signals (each returns a Signal pointing PROVENANCE_HINT / SYNTHETIC / TAMPERED / NONE):
   ① c2pa_manifest    — Content Credentials / C2PA manifest embedded?
   ② generator_meta   — known AI-generator signature in metadata?
   ③ ai_watermark     — declared AI-watermark / training assertion?
@@ -29,7 +29,7 @@ Verdict (synthesized from the signals, honesty-first priority order):
   TAMPERED          — integrity broken (strongest negative)
   SYNTHETIC         — AI-origin signal found (declared or signatured)
   CONFLICTING       — AUTHENTIC and SYNTHETIC signals both present
-  AUTHENTIC-SIGNED  — provenance signature present, nothing contradicts it
+  PROVENANCE-UNVERIFIED  — provenance marker only; signature NOT verified
   UNVERIFIED        — no usable signal — we say "unknown", never "fake"
 """
 from __future__ import annotations
@@ -41,7 +41,8 @@ from dataclasses import dataclass
 # Result types
 # ─────────────────────────────────────────────────────────────
 # A signal points in one of four directions (or NONE = silent).
-AUTHENTIC = "AUTHENTIC"
+PROVENANCE_HINT = "PROVENANCE_HINT"
+AUTHENTIC = PROVENANCE_HINT  # Backward-compatible import, NOT a verified authenticity signal.
 SYNTHETIC = "SYNTHETIC"
 TAMPERED  = "TAMPERED"
 NONE      = "NONE"
@@ -50,7 +51,7 @@ NONE      = "NONE"
 @dataclass
 class Signal:
     probe: str
-    direction: str   # AUTHENTIC / SYNTHETIC / TAMPERED / NONE
+    direction: str   # PROVENANCE_HINT / SYNTHETIC / TAMPERED / NONE
     detail: str
 
 
@@ -76,11 +77,11 @@ _WATERMARK_MARKERS = [b"SynthID", b"synthid", b"C2PA-watermark", b"watermark:ai"
 # ① C2PA / Content Credentials manifest
 # ─────────────────────────────────────────────────────────────
 def c2pa_manifest_check(data: bytes) -> Signal:
-    """① Is a C2PA / Content Credentials manifest embedded?
+    """① Does the file contain a possible C2PA / Content Credentials byte marker?
 
-    PoC scope: detects the *presence* of a manifest by byte-scan. It does NOT
+    PoC scope: detects marker bytes, NOT the presence of a valid manifest. It does NOT
     yet cryptographically verify the signature chain — that is a documented
-    TODO (needs the c2pa library). Presence alone is treated as a provenance
+    TODO (needs the c2pa library). Marker presence is only a provenance
     signal; an embedded AI-origin assertion flips it to SYNTHETIC.
     """
     has_manifest = any(m in data for m in _C2PA_MARKERS)
@@ -88,11 +89,11 @@ def c2pa_manifest_check(data: bytes) -> Signal:
         return Signal("① c2pa-manifest", NONE, "No C2PA / Content Credentials manifest found.")
     if any(a in data for a in _C2PA_AI_ASSERTIONS):
         return Signal("① c2pa-manifest", SYNTHETIC,
-                      "C2PA manifest present AND declares AI/ML origin "
-                      "(trainedAlgorithmicMedia / digitalSourceType).")
-    return Signal("① c2pa-manifest", AUTHENTIC,
-                  "C2PA / Content Credentials manifest present. "
-                  "[PoC: signature-chain crypto NOT yet verified]")
+                      "Possible C2PA and AI-origin marker bytes found "
+                      "(trainedAlgorithmicMedia / digitalSourceType); declaration NOT authenticated.")
+    return Signal("① c2pa-manifest", PROVENANCE_HINT,
+                  "Possible provenance marker found by byte scan; a valid manifest "
+                  "and its signature have NOT been verified.")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -195,7 +196,7 @@ def synthesize(signals: list[Signal]) -> str:
     if SYNTHETIC in dirs:
         return "SYNTHETIC"
     if AUTHENTIC in dirs:
-        return "AUTHENTIC-SIGNED"
+        return "PROVENANCE-UNVERIFIED"
     return "UNVERIFIED"   # the honest default — "unknown", never "fake"
 
 
@@ -203,7 +204,7 @@ _VERDICT_NOTE = {
     "TAMPERED":         "Integrity signal broken. Treat as altered.",
     "SYNTHETIC":        "AI-origin signal present (declared or signatured).",
     "CONFLICTING":      "Authentic and synthetic signals disagree — investigate.",
-    "AUTHENTIC-SIGNED": "Provenance signature present (PoC: crypto chain not yet verified).",
+    "PROVENANCE-UNVERIFIED": "Provenance marker only; manifest, signature and authenticity NOT verified.",
     "UNVERIFIED":       "No usable signal. UNKNOWN — this is NOT evidence of fakery.",
 }
 
@@ -367,6 +368,8 @@ def verify(file_path: str, *, ledger_path: str = "pm_ledger.jsonl",
         "origin":    origin,
         "verdict":   verdict,
         "note":      _VERDICT_NOTE[verdict],
+        "verification": {"method": "heuristic_signals", "signature_verified": False,
+                         "authenticity_verified": False},
         "signals":   [{"probe": s.probe, "direction": s.direction, "detail": s.detail}
                       for s in signals],
     }
@@ -387,7 +390,7 @@ def verify(file_path: str, *, ledger_path: str = "pm_ledger.jsonl",
 # Certificate + badge (verdict-colored, ported from measure-mirror)
 # ─────────────────────────────────────────────────────────────
 _BADGE_COLOR = {
-    "AUTHENTIC-SIGNED": ("brightgreen", "#4c1"),
+    "PROVENANCE-UNVERIFIED": ("yellow", "#dfb317"),
     "UNVERIFIED":       ("lightgrey",   "#9f9f9f"),
     "SYNTHETIC":        ("orange",      "#fe7d37"),
     "CONFLICTING":      ("yellow",      "#dfb317"),
@@ -420,8 +423,8 @@ def badge(result: dict, *, fmt: str = "markdown") -> str:
 # ─────────────────────────────────────────────────────────────
 # Report printer
 # ─────────────────────────────────────────────────────────────
-_ICON = {AUTHENTIC: "🟢", SYNTHETIC: "🟠", TAMPERED: "🔴", NONE: "⚪"}
-_VERDICT_ICON = {"AUTHENTIC-SIGNED": "🟢", "UNVERIFIED": "⚪",
+_ICON = {AUTHENTIC: "🟡", SYNTHETIC: "🟠", TAMPERED: "🔴", NONE: "⚪"}
+_VERDICT_ICON = {"PROVENANCE-UNVERIFIED": "🟡", "UNVERIFIED": "⚪",
                  "SYNTHETIC": "🟠", "CONFLICTING": "🟡", "TAMPERED": "🔴"}
 
 

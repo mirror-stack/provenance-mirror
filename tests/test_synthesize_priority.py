@@ -24,7 +24,7 @@ def _sig(direction):
     ([TAMPERED], "TAMPERED"),
     ([AUTHENTIC, SYNTHETIC], "CONFLICTING"),
     ([SYNTHETIC], "SYNTHETIC"),
-    ([AUTHENTIC], "AUTHENTIC-SIGNED"),
+    ([AUTHENTIC], "PROVENANCE-UNVERIFIED"),
     ([], "UNVERIFIED"),
 ])
 def test_documented_priority_order(directions, expected):
@@ -47,4 +47,4 @@ def test_readme_table_matches_the_code():
         txt = (Path(__file__).resolve().parents[1] / name).read_text(encoding="utf-8")
         rows = re.findall(r'^\|\s*[1-5]\s*\|\s*`([A-Z-]+)`\s*\|', txt, re.M)
         assert rows == ["TAMPERED", "CONFLICTING", "SYNTHETIC",
-                        "AUTHENTIC-SIGNED", "UNVERIFIED"], f"{name}: {rows}"
+                        "PROVENANCE-UNVERIFIED", "UNVERIFIED"], f"{name}: {rows}"
