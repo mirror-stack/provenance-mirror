@@ -36,9 +36,10 @@ The four together = the 🪞🔎🪪 [Mirror Stack](https://github.com/mirror-st
 A **detector** looks at pixels and guesses "fake". That is a learned classifier
 locked in an arms race — every detector trains the next generator to evade it.
 
-A **verifier** checks deterministic **provenance & integrity signals** — signatures,
-declared origin, container integrity. Cryptography and structure, not guessing.
-Signatures can't be wished away by a better GAN.
+A **verifier** checks **provenance & integrity signals**. This implementation reads
+byte markers, declared origin and container structure; it does **not** parse and
+authenticate C2PA manifests or verify their signatures. Its ledger hashes bind
+recorded assessments, not the truth of an origin claim.
 
 Provenance Mirror is a verifier. Its most important output is the one detectors
 refuse to give: **"I don't know."**
@@ -101,7 +102,7 @@ to find.
 | Priority | Verdict | Fires when | Why this order |
 |---|---|---|---|
 | 1 | `TAMPERED` | any signal points to TAMPERED | A broken integrity signal outranks everything: if the bytes were altered, nothing else read from them can be trusted. |
-| 2 | `CONFLICTING` | AUTHENTIC **and** SYNTHETIC both present | Disagreement is reported as disagreement. Silently picking a winner would manufacture a certainty that the evidence does not support. |
+| 2 | `CONFLICTING` | PROVENANCE_HINT **and** SYNTHETIC both present | Disagreement is reported as disagreement. Silently picking a winner would manufacture a certainty that the evidence does not support. |
 | 3 | `SYNTHETIC` | any SYNTHETIC signal | An AI-origin assertion is positive evidence. |
 | 4 | `PROVENANCE-UNVERIFIED` | any PROVENANCE_HINT signal (`AUTHENTIC` import alias) | Byte marker only; neither a valid manifest nor a signature has been verified. |
 | 5 | `UNVERIFIED` | no usable signal | **The honest default.** No signal means *unknown* — it is **NOT** evidence of fakery. |
@@ -187,8 +188,8 @@ in every renderer, survives copy/paste, decoded back to the recipient id.
 
 The **frame** is real and tested; the **heavy crypto/ML signals are stubs**:
 
-- **C2PA signature chain is NOT cryptographically verified** — ① detects a
-  manifest's *presence* by byte-scan; validating the signing chain needs the
+- **C2PA signature chain is NOT cryptographically verified** — ① detects possible
+  marker bytes, not a valid manifest; validating the signing chain needs the
   `c2pa` library (documented TODO).
 - **Steganographic watermarks (SynthID etc.) are NOT read** — they're private to
   the vendor detector; ③ only sees *declared* markers.
