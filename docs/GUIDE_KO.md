@@ -12,7 +12,8 @@
 ## 철학: 검증기, 탐지기 아님
 
 **탐지기**는 픽셀로 "가짜"를 추측합니다 — 군비경쟁에 갇힌 학습 분류기. **검증기**는
-결정론적 출처·무결성 신호를 검사합니다 — 서명, 선언된 출처, 컨테이너 구조. 출처거울은
+출처·무결성 신호를 검사합니다 — 바이트 표식, 선언된 출처, 컨테이너 구조.
+C2PA 서명 검증은 미구현입니다. 출처거울은
 검증기이고, 가장 가치 있는 출력은 탐지기가 거부하는 정직한 것 —
 **`UNVERIFIED` — "모르겠다"**.
 
@@ -48,24 +49,24 @@ verify(파일)                          trace(유출본)
 ## 신호 레퍼런스
 
 각 프로브는 `Signal(probe, direction, detail)`을 반환하며 `direction`은
-`AUTHENTIC` / `SYNTHETIC` / `TAMPERED` / `NONE` 중 하나. 침묵(`NONE`)은 아무것도
+`PROVENANCE_HINT` / `SYNTHETIC` / `TAMPERED` / `NONE` 중 하나. 침묵(`NONE`)은 아무것도
 증명하지 않습니다 — 신호 부재는 절대 위조의 증거가 아닙니다.
 
 ### ① `c2pa_manifest_check(data) → Signal`
 
-**읽는 것**: 박힌 C2PA / Content Credentials 매니페스트.
+**읽는 것**: C2PA / Content Credentials 관련 바이트 표식. 매니페스트 파싱이 아닙니다.
 
 ```python
 from provmirror import pm
 pm.c2pa_manifest_check(img_bytes)
 # PROVENANCE_HINT — 바이트 표식만 발견; 매니페스트·서명 미검증
-# SYNTHETIC  — 매니페스트 존재 + AI origin 선언 (trainedAlgorithmicMedia)
-# NONE       — 매니페스트 없음
+# SYNTHETIC  — C2PA와 AI-origin 바이트 표식 발견; 선언 미인증
+# NONE       — 인식 가능한 표식 없음
 ```
 
-AI origin을 *선언*하는 매니페스트(생성기가 "ML로 만들었다"고 서명)는 신호를
-`SYNTHETIC`으로 뒤집습니다. **PoC 한계**: 매니페스트 존재를 바이트스캔으로 탐지;
-암호 서명체인은 아직 검증 안 함 (`c2pa` 라이브러리 필요 — 문서화된 TODO).
+AI-origin 바이트 표식은 신호를 `SYNTHETIC`으로 바꿉니다. 누가 만들거나 서명했는지는
+증명하지 않습니다. **PoC 한계**: 바이트스캔은 유효한 매니페스트를 확인하지 못하며,
+암호 서명체인 검증은 미구현입니다.
 
 ### ② `generator_meta_check(data) → Signal`
 
@@ -121,7 +122,7 @@ pm.format_integrity_check(clean_png)        # NONE — 구조 무결
 | 우선 | 판정 | 조건 |
 |---|---|---|
 | 1 | `TAMPERED` | 어느 신호든 TAMPERED |
-| 2 | `CONFLICTING` | AUTHENTIC과 SYNTHETIC 둘 다 |
+| 2 | `CONFLICTING` | PROVENANCE_HINT와 SYNTHETIC 둘 다 |
 | 3 | `SYNTHETIC` | AI-origin 신호 존재 |
 | 4 | `PROVENANCE-UNVERIFIED` | 출처 표식만 발견; 매니페스트·서명 미검증 |
 | 5 | `UNVERIFIED` | 아무것도 없음 — 정직한 기본값 |
@@ -227,7 +228,7 @@ pm.verify("press_photo.jpg", origin="our-newsroom", ledger_path=LEDGER)
 | — | `distribute` / `trace` | — | 유출 추적 |
 | — | `badge` | — | 판정 배지 (markdown/svg) |
 
-**판정 심각도**: `TAMPERED` > `SYNTHETIC` > `CONFLICTING` > `PROVENANCE-UNVERIFIED` >
+**판정 심각도**: `TAMPERED` > `CONFLICTING` > `SYNTHETIC` > `PROVENANCE-UNVERIFIED` >
 `UNVERIFIED`.
 
 ---

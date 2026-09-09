@@ -13,7 +13,8 @@
 
 A **detector** guesses "fake" from pixels — a learned classifier in an arms
 race. A **verifier** checks deterministic provenance & integrity signals —
-signatures, declared origin, container structure. Provenance Mirror is a
+byte markers, declared origin, container structure. C2PA signature verification
+is not implemented. Provenance Mirror is a
 verifier, and its most valuable output is the honest one a detector refuses to
 give: **`UNVERIFIED` — "I don't know."**
 
@@ -49,25 +50,24 @@ share the re-attribution machinery.
 ## Signal reference
 
 Each probe returns a `Signal(probe, direction, detail)` where `direction` is one
-of `AUTHENTIC` / `SYNTHETIC` / `TAMPERED` / `NONE`. A silent probe (`NONE`)
+of `PROVENANCE_HINT` / `SYNTHETIC` / `TAMPERED` / `NONE`. A silent probe (`NONE`)
 proves nothing — absence of a signal is never evidence of fakery.
 
 ### ① `c2pa_manifest_check(data: bytes) → Signal`
 
-**Reads**: an embedded C2PA / Content Credentials manifest.
+**Reads**: possible C2PA / Content Credentials byte markers, not a parsed manifest.
 
 ```python
 from provmirror import pm
 pm.c2pa_manifest_check(img_bytes)
 # PROVENANCE_HINT — byte marker only; manifest and signature NOT verified
-# SYNTHETIC  — manifest present AND declares AI origin (trainedAlgorithmicMedia)
-# NONE       — no manifest found
+# SYNTHETIC  — C2PA and AI-origin marker bytes found; declaration unauthenticated
+# NONE       — no recognized marker found
 ```
 
-A manifest that *declares* AI origin (the generator signed "I made this with
-ML") flips the signal to `SYNTHETIC`. **PoC limit**: detects manifest presence
-by byte-scan; does not yet verify the cryptographic signature chain (needs the
-`c2pa` library — documented TODO).
+AI-origin marker bytes flip the signal to `SYNTHETIC`; they do not prove who
+created or signed anything. **PoC limit**: byte scanning does not establish a
+valid manifest. Cryptographic signature verification remains unimplemented.
 
 ### ② `generator_meta_check(data: bytes) → Signal`
 
@@ -128,7 +128,7 @@ encodes the honesty policy:
 | Priority | Verdict | Condition |
 |---|---|---|
 | 1 | `TAMPERED` | any signal points TAMPERED |
-| 2 | `CONFLICTING` | AUTHENTIC and SYNTHETIC both present |
+| 2 | `CONFLICTING` | PROVENANCE_HINT and SYNTHETIC both present |
 | 3 | `SYNTHETIC` | an AI-origin signal present |
 | 4 | `PROVENANCE-UNVERIFIED` | marker only; manifest and signature NOT verified |
 | 5 | `UNVERIFIED` | nothing — the honest default |
@@ -242,7 +242,7 @@ pm.verify("press_photo.jpg", origin="our-newsroom", ledger_path=LEDGER)
 | — | `distribute` / `trace` | — | leak tracing |
 | — | `badge` | — | verdict badge (markdown/svg) |
 
-**Verdict severity**: `TAMPERED` > `SYNTHETIC` > `CONFLICTING` >
+**Verdict severity**: `TAMPERED` > `CONFLICTING` > `SYNTHETIC` >
 `PROVENANCE-UNVERIFIED` > `UNVERIFIED`.
 
 ---
